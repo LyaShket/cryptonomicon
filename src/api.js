@@ -1,6 +1,9 @@
 const API_KEY = "3193fd3274d9118ad05b42c5a31735864e32328f9a226a6b78cbbdaea7eb09cb"
 const AGGREGATE_INDEX = "5"
+const INVALID_SUB_TYPE = "500"
+const INVALID_SUB = "INVALID_SUB"
 
+let BTC_TO_USD = 0
 let tickers = {}
 
 const socket = new WebSocket(`wss://streamer.cryptocompare.com/v2?api_key=${API_KEY}`)
@@ -12,6 +15,15 @@ socket.addEventListener('message', event => {
             f(message["PRICE"])
         })
     }
+    else if (message["TYPE"] === INVALID_SUB_TYPE && message["MESSAGE"] === INVALID_SUB) {
+        const currentTicker = message["PARAMETER"].slice(9, -4)
+        tickers[currentTicker].forEach(f => {
+            f("-")
+        })
+    }
+})
+subscribeTickerToUpdate("BTC", (newPrice) => {
+    BTC_TO_USD = newPrice
 })
 
 export function subscribeTickerToUpdate(ticker, cb) {

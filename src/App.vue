@@ -88,7 +88,10 @@
                 class="bg-white overflow-hidden shadow rounded-lg border-purple-800 border-solid cursor-pointer"
                 v-for="ticker in paginatedTickers"
                 :key="ticker.name"
-                :class="{'border-4': ticker === selectedTicker}"
+                :class="{
+                  'border-4': ticker === selectedTicker,
+                  'bg-red-100': !ticker.isValid
+                }"
                 @click="selectTicker(ticker)"
             >
               <div class="px-4 py-5 sm:p-6 text-center">
@@ -237,6 +240,9 @@ export default {
     this.tickers.forEach(ticker => {
       subscribeTickerToUpdate(ticker.name, newPrice => {
         ticker.price = newPrice
+        if (newPrice === "-") {
+          ticker.isValid = false
+        }
         if (this.selectedTicker === ticker) {
           this.history.push(newPrice)
         }
@@ -290,7 +296,8 @@ export default {
 
       const newTicker = {
         name: this.addTickerTextComputed.toUpperCase(),
-        price: "-"
+        price: "-",
+        isValid: true,
       }
       this.addTickerTextComputed = ""
 
@@ -298,6 +305,9 @@ export default {
 
       subscribeTickerToUpdate(newTicker.name, newPrice => {
         newTicker.price = newPrice
+        if (newPrice === "-") {
+          newTicker.isValid = false
+        }
         if (this.selectedTicker === newTicker) {
           this.history.push(newPrice)
         }
