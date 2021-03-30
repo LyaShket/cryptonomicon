@@ -3,7 +3,7 @@ const AGGREGATE_INDEX = "5"
 const INVALID_SUB_TYPE = "500"
 const INVALID_SUB = "INVALID_SUB"
 
-let BTC_TO_USD = 0
+let exchange = { btcToUsd: 0 }
 let tickers = {}
 
 const socket = new WebSocket(`wss://streamer.cryptocompare.com/v2?api_key=${API_KEY}`)
@@ -11,57 +11,70 @@ socket.addEventListener('message', event => {
     const message = JSON.parse(event.data)
     if (message["TYPE"] === AGGREGATE_INDEX && message["PRICE"]) {
         const currentTicker = message["FROMSYMBOL"]
+
+        const exchangeTicker = message["TOSYMBOL"]
+        let newPrice = message["PRICE"]
+        if (exchangeTicker === "BTC")
+            newPrice *= exchange.btcToUsd
+
         tickers[currentTicker].forEach(f => {
-            f(message["PRICE"])
+            f(newPrice)
         })
     }
     else if (message["TYPE"] === INVALID_SUB_TYPE && message["MESSAGE"] === INVALID_SUB) {
         const currentTicker = message["PARAMETER"].slice(9, -4)
+
+        let newPrice = "-"
+        if (currentTicker === "BTC") {
+            newPrice = exchange.btcToUsd
+        }
+
         tickers[currentTicker].forEach(f => {
-            f("-")
+            f(newPrice)
         })
     }
 })
 subscribeTickerToUpdate("BTC", (newPrice) => {
-    BTC_TO_USD = newPrice
-})
+    exchange.btcToUsd = newPrice
+}, "USD")
 
-export function subscribeTickerToUpdate(ticker, cb) {
+export function subscribeTickerToUpdate(ticker, cb, currency = "BTC") {
     const currentTicker = Object.keys(tickers).indexOf(ticker) > -1 ? tickers[ticker] : []
     currentTicker.push(cb)
     tickers[ticker] = currentTicker
-    subscribeTickerToWS(ticker)
+    subscribeTickerToWS(ticker, currency)
 }
 
-export function unsubscribeTickerFromUpdate(ticker) {
+export function unsubscribeTickerFromUpdate(ticker, currency = "BTC") {
     tickers[ticker] = []
-    unsubscribeTickerFromWS(ticker)
+    unsubscribeTickerFromWS(ticker, currency)
 }
 
-function subscribeTickerToWS(ticker) {
+function subscribeTickerToWS(ticker, currency) {
     if (socket.readyState === WebSocket.CONNECTING) {
         socket.addEventListener('open', () => {
-            subscribeTickerToWS(ticker)
+            subscribeTickerToWS(ticker, currency)
         }, { once: true })
         return
     }
     socket.send(JSON.stringify({
         "action": "SubAdd",
-        "subs": [`5~CCCAGG~${ticker}~USD`]
+        "subs": [`5~CCCAGG~${ticker}~${currency}`]
     }))
 }
 
-function unsubscribeTickerFromWS(ticker) {
+function unsubscribeTickerFromWS(ticker, currency) {
     if (socket.readyState === WebSocket.CONNECTING) {
         socket.addEventListener('open', () => {
-            unsubscribeTickerFromWS(ticker)
+            unsubscribeTickerFromWS(ticker, currency)
         }, { once: true })
         return
     }
     socket.send(JSON.stringify({
         "action": "SubRemove",
-        "subs": [`5~CCCAGG~${ticker}~USD`]
+        "subs": [`5~CCCAGG~${ticker}~${currency}`]
     }))
 }
 
 window.tickers = tickers
+window.exchange = exchange

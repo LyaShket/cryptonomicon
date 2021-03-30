@@ -99,7 +99,7 @@
                   {{ ticker.name }} - USD
                 </dt>
                 <dd class="mt-1 text-3xl font-semibold text-gray-900">
-                  {{ ticker.price }}
+                  {{ formatPrice(ticker.price) }}
                 </dd>
               </div>
               <div class="w-full border-t border-gray-200"></div>
@@ -336,6 +336,12 @@ export default {
     addTickerWithHint(hint) {
       this.addTickerTextComputed = hint
       this.addTicker()
+    },
+    formatPrice(price) {
+      if (price === "-")
+        return price
+      let formattedPrice = price.toFixed(5)
+      return formattedPrice.replace(/0*$/,"")
     }
   },
   watch: {
