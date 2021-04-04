@@ -182,8 +182,10 @@ export default {
       filter: "",
       tickers: [],
       selectedTicker: null,
+
       history: [],
-      adaptiveHistory: [],
+      historyMaxSize: 1,
+
       isLoading: true,
       tickerHints: [],
       doAddTickerExist: false,
@@ -233,6 +235,15 @@ export default {
 
       return hints
     },
+    adaptiveHistory() {
+      const adaptiveHistory = [...this.history]
+
+      while (adaptiveHistory.length > this.historyMaxSize) {
+        adaptiveHistory.shift()
+      }
+
+      return adaptiveHistory
+    },
     calculatedHistory() {
       const minValue = Math.min(...this.adaptiveHistory)
       const maxValue = Math.max(...this.adaptiveHistory)
@@ -265,7 +276,7 @@ export default {
     this.filter = searchParams.get("filter") ? searchParams.get("filter") : ""
   },
   mounted() {
-    addEventListener('resize', this.calculateAdaptiveHistory)
+    addEventListener('resize', this.calculateHistoryMaxSize)
     fetch("https://min-api.cryptocompare.com/data/all/coinlist?summary=true")
         .then(response => response.json())
         .then(responseData => {
@@ -282,20 +293,16 @@ export default {
           this.isLoading = false
         })
   },
+  beforeDestroy() {
+    removeEventListener('resize', this.calculateHistoryMaxSize)
+  },
   methods: {
-    calculateAdaptiveHistory() {
-      const adaptiveHistory = [...this.history]
-
-      let historyMaxSize = 1
-      if (this.$refs.history) {
-        historyMaxSize = this.$refs.history.offsetWidth / 40 + 1
+    calculateHistoryMaxSize() {
+      if (!this.$refs.history) {
+        return
       }
-
-      while (adaptiveHistory.length > historyMaxSize) {
-        adaptiveHistory.shift()
-      }
-
-      this.adaptiveHistory = adaptiveHistory
+      console.log("ok")
+      this.historyMaxSize = this.$refs.history.offsetWidth / 40 + 1
     },
     setHistoryParam(param, value) {
       this.currentUrl.searchParams.set(param, value)
@@ -372,9 +379,7 @@ export default {
     },
     selectedTicker() {
       this.history = []
-    },
-    history() {
-      this.calculateAdaptiveHistory()
+      this.$nextTick(this.calculateHistoryMaxSize)
     }
   }
 }
