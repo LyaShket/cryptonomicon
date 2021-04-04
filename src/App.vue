@@ -210,10 +210,10 @@ export default {
       return this.tickers.filter(ticker => ticker.name.indexOf(this.filter.toUpperCase()) !== -1)
     },
     paginatedTickers() {
-      const firstSplice = (this.page - 1) * 6
-      const secondSplice = firstSplice + 6
+      const firstSlice = (this.page - 1) * 6
+      const secondSlice = firstSlice + 6
 
-      return this.filteredTickers.slice(firstSplice, secondSplice)
+      return this.filteredTickers.slice(firstSlice, secondSlice)
     },
     hints() {
       const hints = []
@@ -238,11 +238,10 @@ export default {
     adaptiveGraph() {
       const adaptiveGraph = [...this.history]
 
-      while (adaptiveGraph.length > this.historyMaxSize) {
-        adaptiveGraph.shift()
-      }
+      const firstSlice = adaptiveGraph.length - this.historyMaxSize
+      const secondSlice = adaptiveGraph.length
 
-      return adaptiveGraph
+      return adaptiveGraph.slice(firstSlice, secondSlice)
     },
     normalizedGraph() {
       const minValue = Math.min(...this.adaptiveGraph)
