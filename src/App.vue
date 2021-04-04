@@ -128,10 +128,10 @@
               <h3 class="text-lg leading-6 font-medium text-gray-900 my-8">
                 {{ selectedTicker.name }} - USD
               </h3>
-              <div class="flex items-end border-gray-600 border-b border-l h-64">
+              <div class="flex items-end border-gray-600 border-b border-l h-64" ref="history">
                 <div
                     class="bg-purple-800 border w-10"
-                    v-for="(h, index) in calculateHistory()"
+                    v-for="(h, index) in calculatedHistory"
                     :key="index"
                     :style="{'height': h + '%'}"
                 ></div>
@@ -183,6 +183,7 @@ export default {
       tickers: [],
       selectedTicker: null,
       history: [],
+      adaptiveHistory: [],
       isLoading: true,
       tickerHints: [],
       doAddTickerExist: false,
@@ -232,6 +233,15 @@ export default {
 
       return hints
     },
+    calculatedHistory() {
+      const minValue = Math.min(...this.adaptiveHistory)
+      const maxValue = Math.max(...this.adaptiveHistory)
+      const difference = maxValue - minValue ? maxValue - minValue : 1
+
+      if (minValue === maxValue)
+        return this.adaptiveHistory.map(() => 50)
+      return this.adaptiveHistory.map(h => (h - minValue) / difference * 95 + 5)
+    },
   },
   created() {
     if (localStorage.getItem("tickers-list") !== null)
@@ -255,6 +265,7 @@ export default {
     this.filter = searchParams.get("filter") ? searchParams.get("filter") : ""
   },
   mounted() {
+    addEventListener('resize', this.calculateAdaptiveHistory)
     fetch("https://min-api.cryptocompare.com/data/all/coinlist?summary=true")
         .then(response => response.json())
         .then(responseData => {
@@ -272,6 +283,20 @@ export default {
         })
   },
   methods: {
+    calculateAdaptiveHistory() {
+      const adaptiveHistory = [...this.history]
+
+      let historyMaxSize = 1
+      if (this.$refs.history) {
+        historyMaxSize = this.$refs.history.offsetWidth / 40 + 1
+      }
+
+      while (adaptiveHistory.length > historyMaxSize) {
+        adaptiveHistory.shift()
+      }
+
+      this.adaptiveHistory = adaptiveHistory
+    },
     setHistoryParam(param, value) {
       this.currentUrl.searchParams.set(param, value)
       history.pushState({}, '', this.currentUrl)
@@ -281,7 +306,6 @@ export default {
         return
 
       this.selectedTicker = ticker
-      this.history = []
     },
     addTicker() {
       if (!this.addTickerTextComputed)
@@ -324,15 +348,6 @@ export default {
       this.tickers.splice(this.tickers.indexOf(ticker), 1)
       unsubscribeTickerFromUpdate(ticker.name)
     },
-    calculateHistory() {
-      const minValue = Math.min(...this.history)
-      const maxValue = Math.max(...this.history)
-      const difference = maxValue - minValue ? maxValue - minValue : 1
-
-      if (minValue === maxValue)
-        return this.history.map(() => 50)
-      return this.history.map(h => (h - minValue) / difference * 95 + 5)
-    },
     addTickerWithHint(hint) {
       this.addTickerTextComputed = hint
       this.addTicker()
@@ -354,6 +369,12 @@ export default {
     },
     tickers() {
       localStorage.setItem("tickers-list", JSON.stringify(this.tickers))
+    },
+    selectedTicker() {
+      this.history = []
+    },
+    history() {
+      this.calculateAdaptiveHistory()
     }
   }
 }

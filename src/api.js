@@ -14,8 +14,9 @@ socket.addEventListener('message', event => {
 
         const exchangeTicker = message["TOSYMBOL"]
         let newPrice = message["PRICE"]
-        if (exchangeTicker === "BTC")
+        if (exchangeTicker === "BTC") {
             newPrice *= exchange.btcToUsd
+        }
 
         tickers[currentTicker].forEach(f => {
             f(newPrice)
