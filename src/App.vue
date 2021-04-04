@@ -238,7 +238,8 @@ export default {
     adaptiveGraph() {
       const adaptiveGraph = [...this.history]
 
-      const firstSlice = adaptiveGraph.length - this.historyMaxSize
+      let firstSlice = adaptiveGraph.length - this.historyMaxSize
+      firstSlice = firstSlice > 0 ? firstSlice : 0
       const secondSlice = adaptiveGraph.length
 
       return adaptiveGraph.slice(firstSlice, secondSlice)
