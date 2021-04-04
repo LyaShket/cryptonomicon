@@ -131,7 +131,7 @@
               <div class="flex items-end border-gray-600 border-b border-l h-64" ref="history">
                 <div
                     class="bg-purple-800 border w-10"
-                    v-for="(h, index) in calculatedHistory"
+                    v-for="(h, index) in normalizedGraph"
                     :key="index"
                     :style="{'height': h + '%'}"
                 ></div>
@@ -235,23 +235,23 @@ export default {
 
       return hints
     },
-    adaptiveHistory() {
-      const adaptiveHistory = [...this.history]
+    adaptiveGraph() {
+      const adaptiveGraph = [...this.history]
 
-      while (adaptiveHistory.length > this.historyMaxSize) {
-        adaptiveHistory.shift()
+      while (adaptiveGraph.length > this.historyMaxSize) {
+        adaptiveGraph.shift()
       }
 
-      return adaptiveHistory
+      return adaptiveGraph
     },
-    calculatedHistory() {
-      const minValue = Math.min(...this.adaptiveHistory)
-      const maxValue = Math.max(...this.adaptiveHistory)
+    normalizedGraph() {
+      const minValue = Math.min(...this.adaptiveGraph)
+      const maxValue = Math.max(...this.adaptiveGraph)
       const difference = maxValue - minValue ? maxValue - minValue : 1
 
       if (minValue === maxValue)
-        return this.adaptiveHistory.map(() => 50)
-      return this.adaptiveHistory.map(h => (h - minValue) / difference * 95 + 5)
+        return this.adaptiveGraph.map(() => 50)
+      return this.adaptiveGraph.map(h => (h - minValue) / difference * 95 + 5)
     },
   },
   created() {
@@ -301,7 +301,6 @@ export default {
       if (!this.$refs.history) {
         return
       }
-      console.log("ok")
       this.historyMaxSize = this.$refs.history.offsetWidth / 40 + 1
     },
     setHistoryParam(param, value) {
